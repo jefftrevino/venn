@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Geist', system-ui, sans-serif; background: #FAFAF9; color: #1B1B19; -webkit-font-smoothing: antialiased; }
+  input { font-family: inherit; }
+  button { font-family: inherit; }
+  @keyframes vdots { 0%,80%,100%{ opacity:.2 } 40%{ opacity:1 } }
+  @keyframes vfade { from{ opacity:0; transform:translateY(4px) } to{ opacity:1; transform:none } }
+</style>
+</helmet>
+
+<div style="width:100%; min-height:100vh; display:flex; flex-direction:column;">
+
+  <sc-if value="{{ isCreate }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px;">
+      <div style="width:380px;">
+        <div style="font-family:'Geist Mono'; font-size:11px; letter-spacing:.16em; color:#A4A39C; text-transform:uppercase; margin-bottom:18px;">Overlap</div>
+        <h1 style="font-size:30px; font-weight:600; letter-spacing:-.02em; margin:0 0 8px; line-height:1.1;">Find what your group<br>has in common.</h1>
+        <p style="font-size:15px; color:#8A8A82; margin:0 0 30px; line-height:1.5;">Create a team, share one link, and let everyone fill in their own circle. The overlap writes itself.</p>
+
+        <sc-if value="{{ notFound }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:13px; color:#9A5A3A; background:#FBF1EA; border:1px solid #F0DECF; border-radius:9px; padding:11px 13px; line-height:1.5; margin-bottom:22px;">That invite link's team lives in another browser. Invite links sync within the same browser — open the link in a new tab of the browser that created the team. Or start your own below.</div>
+        </sc-if>
+
+        <label style="display:block; font-size:12px; color:#8A8A82; margin-bottom:7px;">Team name</label>
+        <input value="{{ teamNameDraft }}" onInput="{{ onTeamName }}" onKeyDown="{{ onCreateKey }}" placeholder="e.g. The Wednesday Band" style="width:100%; padding:11px 13px; font-size:15px; border:1px solid #E4E3DD; border-radius:9px; background:#fff; outline:none; margin-bottom:16px;">
+
+        <label style="display:block; font-size:12px; color:#8A8A82; margin-bottom:7px;">Your name</label>
+        <input value="{{ yourNameDraft }}" onInput="{{ onYourName }}" onKeyDown="{{ onCreateKey }}" placeholder="e.g. Mateo" style="width:100%; padding:11px 13px; font-size:15px; border:1px solid #E4E3DD; border-radius:9px; background:#fff; outline:none; margin-bottom:24px;">
+
+        <button onClick="{{ createTeam }}" style="width:100%; padding:12px; font-size:15px; font-weight:500; color:#fff; background:#1B1B19; border:none; border-radius:9px; cursor:pointer; opacity:{{ createOpacity }};">Create team &amp; get invite link</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isJoin }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px;">
+      <div style="width:380px;">
+        <div style="font-family:'Geist Mono'; font-size:11px; letter-spacing:.16em; color:#A4A39C; text-transform:uppercase; margin-bottom:18px;">You're invited</div>
+        <h1 style="font-size:30px; font-weight:600; letter-spacing:-.02em; margin:0 0 8px; line-height:1.1;">Join <span style="color:oklch(0.56 0.16 255);">{{ joinTeamName }}</span></h1>
+        <p style="font-size:15px; color:#8A8A82; margin:0 0 30px; line-height:1.5;">You'll get your own circle in the team's diagram. Fill it in and watch the overlap appear with everyone else's.</p>
+
+        <label style="display:block; font-size:12px; color:#8A8A82; margin-bottom:7px;">Your name</label>
+        <input value="{{ routeNameDraft }}" onInput="{{ onRouteName }}" onKeyDown="{{ onRouteKey }}" placeholder="e.g. Priya" autofocus style="width:100%; padding:11px 13px; font-size:15px; border:1px solid #E4E3DD; border-radius:9px; background:#fff; outline:none; margin-bottom:24px;">
+
+        <button onClick="{{ doJoinRoute }}" style="width:100%; padding:12px; font-size:15px; font-weight:500; color:#fff; background:#1B1B19; border:none; border-radius:9px; cursor:pointer; opacity:{{ routeOpacity }};">Join the diagram</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1; display:flex; flex-direction:column; min-height:100vh;">
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 22px; border-bottom:1px solid #ECEBE5; position:relative; z-index:400; background:#FAFAF9;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <span style="font-size:16px; font-weight:600; letter-spacing:-.01em;">{{ teamName }}</span>
+          <span style="font-family:'Geist Mono'; font-size:10px; letter-spacing:.14em; color:#B0AFA8; text-transform:uppercase;">team</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="display:flex; align-items:center; gap:-6px;">
+            <sc-for list="{{ avatars }}" as="a" hint-placeholder-count="1">
+              <div onClick="{{ a.onClick }}" title="{{ a.name }}" style="{{ a.style }}">{{ a.initial }}</div>
+            </sc-for>
+          </div>
+          <div style="position:relative;">
+            <button onClick="{{ toggleInvite }}" style="display:flex; align-items:center; gap:6px; padding:8px 14px; font-size:13px; font-weight:500; color:#1B1B19; background:#fff; border:1px solid #E4E3DD; border-radius:8px; cursor:pointer;">Invite</button>
+            <sc-if value="{{ invitePopover }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; top:42px; right:0; width:288px; background:#fff; border:1px solid #ECEBE5; border-radius:12px; box-shadow:0 12px 32px rgba(20,20,10,.12); padding:16px; z-index:50; animation:vfade .14s ease;">
+                <div style="font-size:13px; font-weight:500; margin-bottom:4px;">Invite your team</div>
+                <div style="font-size:12px; color:#9A998F; line-height:1.45; margin-bottom:12px;">Each person who joins gets their own circle — edits sync live both ways. Open a collaborator window to see it here.</div>
+                <div style="display:flex; align-items:center; gap:8px; padding:9px 11px; background:#F6F5F1; border-radius:8px; margin-bottom:11px;">
+                  <span style="flex:1; font-family:'Geist Mono'; font-size:12px; color:#54534C; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ link }}</span>
+                  <button onClick="{{ copyLink }}" style="font-size:12px; font-weight:500; color:#fff; background:#1B1B19; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; flex:0 0 auto;">{{ copyLabel }}</button>
+                </div>
+                <button onClick="{{ openCollabWindow }}" style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:12.5px; font-weight:500; color:#1B1B19; background:#fff; border:1px solid #E4E3DD; border-radius:8px; padding:9px 11px; cursor:pointer; margin-bottom:8px;"><span>Open a collaborator window</span><span style="color:#9A998F;">↗</span></button>
+                <button onClick="{{ openAdd }}" style="width:100%; text-align:left; font-size:12px; color:#9A998F; background:none; border:none; cursor:pointer; padding:2px 0 0;">+ &nbsp;Add a circle in this window</button>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ banner }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:center; justify-content:center; gap:12px; padding:10px; background:#F6F5F1; border-bottom:1px solid #ECEBE5; font-size:13px; color:#6E6D65;">
+          <span>Your team is empty — share this link so others can add their circle:</span>
+          <span style="font-family:'Geist Mono'; font-size:12px; color:#1B1B19;">{{ link }}</span>
+          <button onClick="{{ copyLink }}" style="font-size:12px; font-weight:500; color:#1B1B19; background:#fff; border:1px solid #E4E3DD; border-radius:6px; padding:4px 10px; cursor:pointer;">{{ copyLabel }}</button>
+        </div>
+      </sc-if>
+
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:28px; overflow:hidden;">
+        <div ref="{{ setDiagramRef }}" style="{{ diagramStyle }}">
+          <sc-for list="{{ circles }}" as="c" hint-placeholder-count="1">
+            <div style="{{ c.style }}"></div>
+          </sc-for>
+          <sc-for list="{{ labels }}" as="l" hint-placeholder-count="1">
+            <div style="{{ l.style }}">
+              <div style="font-size:14px; font-weight:600; letter-spacing:-.01em;">{{ l.name }}</div>
+              <div style="font-family:'Geist Mono'; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; opacity:.75; margin-top:1px;">{{ l.sub }}</div>
+            </div>
+          </sc-for>
+          <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="0">
+            <div style="{{ chip.style }}" onPointerDown="{{ chip.onDown }}">
+              <span>{{ chip.text }}</span>
+              <sc-if value="{{ chip.active }}" hint-placeholder-val="{{ false }}">
+                <button onPointerDown="{{ stop }}" onClick="{{ chip.onRemove }}" style="border:none; background:none; cursor:pointer; color:#BDBCB4; font-size:14px; line-height:1; padding:0; margin:0;">×</button>
+              </sc-if>
+            </div>
+          </sc-for>
+
+          <div style="{{ centerStyle }}">
+            <sc-if value="{{ centerHint }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:10px 16px; border:1px dashed #D2D1C9; border-radius:999px; font-size:12px; color:#A8A79F; background:rgba(250,250,249,.7); white-space:nowrap;">{{ hintText }}</div>
+            </sc-if>
+            <sc-if value="{{ centerLoading }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:center; gap:8px; padding:11px 16px; background:#fff; border:1px solid #ECEBE5; border-radius:12px; box-shadow:0 8px 24px rgba(20,20,10,.1); font-size:12.5px; color:#6E6D65; white-space:nowrap;">
+                <span>weighing everyone's picks</span>
+                <span style="display:inline-flex; gap:3px;">
+                  <span style="width:4px; height:4px; border-radius:50%; background:#9A998F; animation:vdots 1.2s infinite;"></span>
+                  <span style="width:4px; height:4px; border-radius:50%; background:#9A998F; animation:vdots 1.2s infinite .2s;"></span>
+                  <span style="width:4px; height:4px; border-radius:50%; background:#9A998F; animation:vdots 1.2s infinite .4s;"></span>
+                </span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ centerReady }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ toggleExpand }}" style="{{ cardStyle }}">
+                <div style="font-family:'Geist Mono'; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:#B0AFA8; margin-bottom:11px; display:flex; align-items:center; gap:6px;">
+                  <span>you'd all go for</span>
+                  <sc-if value="{{ updating }}" hint-placeholder-val="{{ false }}"><span style="color:#C7C6BE;">· updating</span></sc-if>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:9px;">
+                  <sc-for list="{{ suggestions }}" as="sg" hint-placeholder-count="3">
+                    <div style="display:flex; flex-direction:column; gap:3px;">
+                      <div style="display:flex; align-items:baseline; gap:8px;">
+                        <span style="width:5px; height:5px; border-radius:50%; background:#1B1B19; flex:0 0 auto; transform:translateY(-2px);"></span>
+                        <span style="font-size:15px; font-weight:600; letter-spacing:-.01em; line-height:1.2;">{{ sg.label }}</span>
+                      </div>
+                      <sc-if value="{{ expanded }}" hint-placeholder-val="{{ false }}">
+                        <div style="font-size:11.5px; color:#8A8A82; line-height:1.45; padding-left:13px;">{{ sg.why }}</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="font-family:'Geist Mono'; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:#C7C6BE; margin-top:12px;">{{ expandHint }}</div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:center; padding:0 24px 26px;">
+        <div style="display:flex; align-items:center; gap:8px; width:480px; max-width:100%; padding:7px 7px 7px 16px; background:#fff; border:1px solid #E4E3DD; border-radius:12px; box-shadow:0 2px 10px rgba(20,20,10,.04);">
+          <span style="font-size:13px; color:#9A998F; white-space:nowrap;">Add to <b style="color:#1B1B19; font-weight:600;">{{ activeName }}</b>'s circle</span>
+          <input value="{{ draft }}" onInput="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" placeholder="type an item, press Enter…" style="flex:1; border:none; outline:none; font-size:14px; background:none; min-width:0;">
+          <button onClick="{{ addItem }}" style="font-size:13px; font-weight:500; color:#fff; background:#1B1B19; border:none; border-radius:8px; padding:8px 16px; cursor:pointer;">Add</button>
+        </div>
+      </div>
+
+      <sc-for list="{{ collabWindows }}" as="w" hint-placeholder-count="0">
+        <div style="{{ w.style }}">
+          <div onPointerDown="{{ w.onHeaderDown }}" style="display:flex; align-items:center; gap:9px; padding:9px 12px; background:#F6F5F1; border-bottom:1px solid #ECEBE5; flex:0 0 auto; cursor:grab; user-select:none; touch-action:none;">
+            <div style="display:flex; gap:6px;">
+              <button onPointerDown="{{ stop }}" onClick="{{ w.onClose }}" title="Close" style="width:11px; height:11px; border-radius:50%; background:#EC6A5E; border:none; cursor:pointer; padding:0;"></button>
+              <span style="width:11px; height:11px; border-radius:50%; background:#E0DFD8; display:inline-block;"></span>
+              <span style="width:11px; height:11px; border-radius:50%; background:#E0DFD8; display:inline-block;"></span>
+            </div>
+            <span style="font-family:'Geist Mono'; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#9A998F;">collaborator window · drag to move</span>
+          </div>
+          <div style="flex:1; position:relative; overflow:hidden;">
+            <iframe src="{{ w.src }}" style="display:block; width:700px; height:820px; border:0; zoom:0.628;"></iframe>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAdd }}" style="position:fixed; inset:0; background:rgba(27,27,25,.32); display:flex; align-items:center; justify-content:center; z-index:100; animation:vfade .14s ease;">
+      <div onClick="{{ stop }}" style="width:340px; background:#fff; border-radius:16px; box-shadow:0 24px 60px rgba(20,20,10,.24); padding:24px;">
+        <div style="font-family:'Geist Mono'; font-size:10px; letter-spacing:.14em; color:#B0AFA8; text-transform:uppercase; margin-bottom:10px;">Add a circle</div>
+        <div style="font-size:18px; font-weight:600; letter-spacing:-.01em; margin-bottom:5px;">Who's joining?</div>
+        <div style="font-size:13px; color:#9A998F; line-height:1.5; margin-bottom:18px;">Adds a new circle in this window and switches you to it — handy for trying the diagram solo.</div>
+        <input value="{{ addNameDraft }}" onInput="{{ onAddName }}" onKeyDown="{{ onAddKey }}" placeholder="Their name" autofocus style="width:100%; padding:11px 13px; font-size:15px; border:1px solid #E4E3DD; border-radius:9px; outline:none; margin-bottom:16px;">
+        <div style="display:flex; gap:9px;">
+          <button onClick="{{ closeAdd }}" style="flex:0 0 auto; padding:11px 16px; font-size:14px; color:#6E6D65; background:#F6F5F1; border:none; border-radius:9px; cursor:pointer;">Cancel</button>
+          <button onClick="{{ confirmAdd }}" style="flex:1; padding:11px; font-size:14px; font-weight:500; color:#fff; background:#1B1B19; border:none; border-radius:9px; cursor:pointer; opacity:{{ addOpacity }};">Add circle</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1140,&quot;height&quot;:820}}">
+class Component extends DCLogic {
+  state = {
+    step: 'create',
+    teamNameDraft: '',
+    yourNameDraft: '',
+    teamName: '',
+    code: '',
+    participants: [],
+    meId: null,
+    draft: '',
+    invitePopover: false,
+    addOpen: false,
+    addNameDraft: '',
+    routeNameDraft: '',
+    collabWindows: [],
+    notFound: false,
+    copied: false,
+    loading: false,
+    result: null,
+    expanded: false,
+  };
+
+  componentDidMount() {
+    let params;
+    try { params = new URLSearchParams(location.search || ''); } catch (e) { params = new URLSearchParams(''); }
+    const code = params.get('team');
+    const me = params.get('me');
+    window.addEventListener('storage', this.onStorage);
+    if (code) {
+      const doc = this.loadDoc(code);
+      if (doc) {
+        this.setupChannel(code);
+        if (me && doc.participants.some(p => p.id === me)) {
+          this.applyDoc(doc, 'app', me);
+        } else {
+          this.applyDoc(doc, 'join', null);
+        }
+        return;
+      }
+      this.setState({ step: 'create', notFound: true });
+    }
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('storage', this.onStorage);
+    if (this.bc) { try { this.bc.close(); } catch (e) {} }
+  }
+
+  loadDoc(code) {
+    try { const s = localStorage.getItem('overlap:doc:' + code); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+  }
+  getDoc() {
+    const s = this.state;
+    return { code: s.code, teamName: s.teamName, participants: s.participants, result: s.result, loading: s.loading };
+  }
+  applyDoc(doc, step, meId) {
+    const patch = { code: doc.code, teamName: doc.teamName, participants: doc.participants, result: doc.result || null, loading: !!doc.loading };
+    if (step) patch.step = step;
+    if (meId) patch.meId = meId;
+    this.setState(patch);
+  }
+  persist() {
+    try { localStorage.setItem('overlap:doc:' + this.state.code, JSON.stringify(this.getDoc())); } catch (e) {}
+    if (this.bc) { try { this.bc.postMessage(this.getDoc()); } catch (e) {} }
+  }
+  setupChannel(code) {
+    if (this.bc) { try { this.bc.close(); } catch (e) {} }
+    try { this.bc = new BroadcastChannel('overlap:' + code); this.bc.onmessage = (ev) => this.onRemote(ev.data); } catch (e) { this.bc = null; }
+  }
+  onRemote(data) {
+    if (!data || data.code !== this.state.code) return;
+    let parts = data.participants || [];
+    if (this.state.meId && !parts.some(p => p.id === this.state.meId)) {
+      const mine = this.state.participants.find(p => p.id === this.state.meId);
+      if (mine) parts = parts.concat([mine]);
+    }
+    this.setState({ teamName: data.teamName, participants: parts, result: data.result || null, loading: !!data.loading });
+  }
+  onStorage = (e) => {
+    if (!this.state.code) return;
+    if (e.key === 'overlap:doc:' + this.state.code && e.newValue) {
+      try { this.onRemote(JSON.parse(e.newValue)); } catch (err) {}
+    }
+  };
+  shareLink() {
+    try { return location.origin + location.pathname + '?team=' + this.state.code; } catch (e) { return 'overlap.app/?team=' + this.state.code; }
+  }
+  updateURL(me) {
+    try { history.replaceState(null, '', location.pathname + '?team=' + this.state.code + (me ? '&me=' + me : '')); } catch (e) {}
+  }
+
+  hues = [255, 24, 150, 305, 85, 195, 335, 55];
+
+  colorFor(i) {
+    const h = this.hues[i % this.hues.length];
+    return {
+      stroke: `oklch(0.62 0.13 ${h})`,
+      fill: `oklch(0.74 0.11 ${h} / 0.42)`,
+      fillActive: `oklch(0.74 0.13 ${h} / 0.6)`,
+      solid: `oklch(0.56 0.16 ${h})`,
+    };
+  }
+
+  uid() { return Math.random().toString(36).slice(2, 9); }
+
+  onTeamName = (e) => this.setState({ teamNameDraft: e.target.value });
+  onYourName = (e) => this.setState({ yourNameDraft: e.target.value });
+  onCreateKey = (e) => { if (e.key === 'Enter') this.createTeam(); };
+
+  onRouteName = (e) => this.setState({ routeNameDraft: e.target.value });
+  onRouteKey = (e) => { if (e.key === 'Enter') this.doJoinRoute(); };
+  onAddName = (e) => this.setState({ addNameDraft: e.target.value });
+  onAddKey = (e) => { if (e.key === 'Enter') this.confirmAdd(); };
+
+  createTeam = () => {
+    const tn = this.state.teamNameDraft.trim();
+    const yn = this.state.yourNameDraft.trim();
+    if (!tn || !yn) return;
+    const id = this.uid();
+    const code = Math.random().toString(36).slice(2, 8).toLowerCase();
+    this.setState({ step: 'app', teamName: tn, code, participants: [{ id, name: yn, items: [] }], meId: id }, () => {
+      this.setupChannel(code);
+      this.updateURL(id);
+      this.persist();
+    });
+  };
+
+  // add a participant to the shared doc and become them in this window
+  addParticipant(name, cb) {
+    const code = this.state.code;
+    const doc = this.loadDoc(code) || this.getDoc();
+    const id = this.uid();
+    const participants = (doc.participants || []).concat([{ id, name, items: [] }]);
+    this.setState({ participants, teamName: doc.teamName, result: doc.result || null, meId: id }, () => {
+      this.updateURL(id);
+      this.persist();
+      this.schedule();
+      if (cb) cb(id);
+    });
+    return id;
+  }
+
+  doJoinRoute = () => {
+    const n = this.state.routeNameDraft.trim();
+    if (!n) return;
+    this.addParticipant(n, () => this.setState({ step: 'app', routeNameDraft: '' }));
+  };
+
+  openAdd = () => this.setState({ addOpen: true, invitePopover: false, addNameDraft: '' });
+  closeAdd = () => this.setState({ addOpen: false });
+  confirmAdd = () => {
+    const n = this.state.addNameDraft.trim();
+    if (!n) return;
+    this.addParticipant(n);
+    this.setState({ addOpen: false, addNameDraft: '' });
+  };
+
+  openCollabWindow = () => {
+    const id = this.uid();
+    const n = this.state.collabWindows.length;
+    let vw = 1200, vh = 800;
+    try { vw = window.innerWidth; vh = window.innerHeight; } catch (e) {}
+    const x = Math.max(20, vw - 460 - 28 - n * 36);
+    const y = Math.max(86, vh - 560 - 26 - n * 30);
+    this._zc = (this._zc || 90) + 1;
+    this.setState(s => ({ collabWindows: s.collabWindows.concat([{ id, x, y, z: this._zc }]), invitePopover: false }));
+  };
+  closeCollab = (id) => this.setState(s => ({ collabWindows: s.collabWindows.filter(w => w.id !== id) }));
+  startWinDrag = (id, e) => {
+    e.preventDefault();
+    const w = this.state.collabWindows.find(k => k.id === id);
+    if (!w) return;
+    this._zc = (this._zc || 90) + 1;
+    w.z = this._zc;
+    const offX = e.clientX - w.x, offY = e.clientY - w.y;
+    let vw = 1200, vh = 800;
+    try { vw = window.innerWidth; vh = window.innerHeight; } catch (er) {}
+    const move = (ev) => {
+      const win = this.state.collabWindows.find(k => k.id === id);
+      if (!win) return;
+      win.x = Math.max(-380, Math.min(vw - 60, ev.clientX - offX));
+      win.y = Math.max(0, Math.min(vh - 46, ev.clientY - offY));
+      this.forceUpdate();
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    this.forceUpdate();
+  };
+
+  setActive = (id) => this.setState({ meId: id }, () => this.updateURL(id));
+
+  onDraft = (e) => this.setState({ draft: e.target.value });
+  onDraftKey = (e) => { if (e.key === 'Enter') this.addItem(); };
+
+  addItem = () => {
+    const t = this.state.draft.trim();
+    if (!t) return;
+    const p = this.state.participants.find(x => x.id === this.state.meId);
+    if (!p) return;
+    p.items.push({ id: this.uid(), text: t, rx: null, ry: null });
+    this.setState({ draft: '' });
+    this.persist();
+    this.schedule();
+  };
+
+  removeItem = (pid, iid) => {
+    const p = this.state.participants.find(x => x.id === pid);
+    if (!p) return;
+    p.items = p.items.filter(it => it.id !== iid);
+    this.forceUpdate();
+    this.persist();
+    this.schedule();
+  };
+
+  stop = (e) => e.stopPropagation();
+
+  setDiagramRef = (el) => { this._diag = el; };
+
+  geometry() {
+    const S = 600, C = S / 2;
+    const n = this.state.participants.length || 1;
+    const Rt = { 1: 195, 2: 188, 3: 176, 4: 160, 5: 148, 6: 138 };
+    const R = Rt[n] || 126;
+    const D = n === 1 ? 0 : R * 0.6;
+    const centers = [];
+    for (let i = 0; i < n; i++) {
+      const ang = (-90 + i * 360 / n) * Math.PI / 180;
+      centers.push({ x: C + D * Math.cos(ang), y: C + D * Math.sin(ang), ang });
+    }
+    return { S, C, R, centers, n };
+  }
+
+  defaultRel(c, idx, count, n) {
+    let ox, oy;
+    if (n === 1) { ox = 0; oy = -0.12; }
+    else { ox = Math.cos(c.ang) * 0.42; oy = Math.sin(c.ang) * 0.42; }
+    const spread = (idx - (count - 1) / 2) * 0.17;
+    let rx = ox, ry = oy + spread;
+    const m = Math.hypot(rx, ry), max = 0.76;
+    if (m > max) { rx = rx / m * max; ry = ry / m * max; }
+    return { rx, ry };
+  }
+
+  startDrag = (pid, iid, e) => {
+    e.preventDefault();
+    const geo = this.geometry();
+    const pi = this.state.participants.findIndex(p => p.id === pid);
+    if (pi < 0) return;
+    const c = geo.centers[pi], R = geo.R, S = geo.S;
+    const it = this.state.participants[pi].items.find(x => x.id === iid);
+    if (!it) return;
+    const move = (ev) => {
+      if (!this._diag) return;
+      const r = this._diag.getBoundingClientRect();
+      const sx = r.width / S, sy = r.height / S;
+      const px = (ev.clientX - r.left) / sx;
+      const py = (ev.clientY - r.top) / sy;
+      let rx = (px - c.x) / R, ry = (py - c.y) / R;
+      const m = Math.hypot(rx, ry), max = 0.82;
+      if (m > max) { rx = rx / m * max; ry = ry / m * max; }
+      it.rx = rx; it.ry = ry;
+      this.forceUpdate();
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      this.persist();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  schedule = () => {
+    clearTimeout(this._t);
+    const elig = this.state.participants.filter(p => p.items.length > 0).length >= 2;
+    if (!elig) { this.setState({ loading: false, result: null }, () => this.persist()); return; }
+    this.setState({ loading: true }, () => this.persist());
+    this._t = setTimeout(() => this.runIntersection(), 1100);
+  };
+
+  runIntersection = async () => {
+    const seq = (this._seq = (this._seq || 0) + 1);
+    const parts = this.state.participants.filter(p => p.items.length > 0);
+    if (parts.length < 2) { this.setState({ loading: false, result: null }, () => this.persist()); return; }
+    const desc = parts.map(p => `- ${p.name}: ${p.items.map(i => i.text).join(', ')}`).join('\n');
+    try {
+      // STAGE 1 — infer the domain and read each input on its own. Used only as a constraint; never shown.
+      const s1 = await window.claude.complete(`Several people each listed items in a shared decision tool. Working from the items alone, figure out what kind of thing these are and what the group is implicitly trying to choose together. Look at each item individually — what is it, and what does it signal about that person's taste?
+
+${desc}
+
+Return ONLY a JSON object, no prose, no markdown:
+{"domain":"<what they're collectively choosing, e.g. 'a song to cover', 'a city to travel to', 'a board game for game night'>","kind":"<the category EVERY listed item belongs to, plural, e.g. 'music genres', 'cities', 'board games'>","format":"<the surface format of the items: typical length + capitalization, e.g. 'one or two lowercase words', 'Proper-case city names', 'Title Case game titles'>","reads":["<one entry per item, written as 'item — what it is and the taste it signals'>"]}`);
+      if (seq !== this._seq) return;
+      const d = JSON.parse(s1.match(/\{[\s\S]*\}/)[0]);
+
+      // STAGE 2 — generate concrete suggestions, constrained by the inferred domain, formatted like the inputs.
+      const s2 = await window.claude.complete(`A group is collaboratively choosing ${d.domain}. Every item below is one of these: ${d.kind}.
+
+${desc}
+
+What each item signals:
+${(d.reads || []).map(r => '- ' + r).join('\n')}
+
+Propose 4 NEW ${d.kind} (none already listed above) that sit at the genuine intersection of everyone's tastes — specific, real options each person would be glad to go with, balancing all of them rather than averaging blandly. Investigate the overlap between the individual reads above.
+
+Hard requirements for each suggestion's "label": it must be an actual ${d.kind}, written in the SAME surface format as the listed items (${d.format}) — same length, same capitalization, just the thing itself with no description attached.
+
+Return ONLY a JSON object, no prose, no markdown:
+{"suggestions":[{"label":"<the ${d.kind}, formatted exactly like the inputs>","why":"<one short clause naming how it bridges these specific people>"}]}`);
+      if (seq !== this._seq) return;
+      const r = JSON.parse(s2.match(/\{[\s\S]*\}/)[0]);
+      const suggestions = (r.suggestions || []).filter(x => x && x.label).slice(0, 5).map(x => ({ label: String(x.label), why: String(x.why || '') }));
+      this.setState({ loading: false, result: suggestions.length ? { suggestions } : null }, () => this.persist());
+    } catch (err) {
+      if (seq !== this._seq) return;
+      this.setState({ loading: false, result: { suggestions: [{ label: 'add a couple more', why: 'a few more items will sharpen the overlap — it retries automatically' }] } }, () => this.persist());
+    }
+  };
+
+  copyLink = () => {
+    try { navigator.clipboard.writeText(this.shareLink()); } catch (e) {}
+    this.setState({ copied: true });
+    clearTimeout(this._ct);
+    this._ct = setTimeout(() => this.setState({ copied: false }), 1600);
+  };
+
+  toggleInvite = () => this.setState(s => ({ invitePopover: !s.invitePopover }));
+
+  toggleExpand = () => this.setState(s => ({ expanded: !s.expanded }));
+
+  renderVals() {
+    const s = this.state;
+    if (s.step === 'create') {
+      const canCreate = !!(s.teamNameDraft.trim() && s.yourNameDraft.trim());
+      return {
+        isCreate: true, isApp: false, isJoin: false, addOpen: false,
+        notFound: s.notFound,
+        teamNameDraft: s.teamNameDraft, yourNameDraft: s.yourNameDraft,
+        onTeamName: this.onTeamName, onYourName: this.onYourName,
+        createTeam: this.createTeam, onCreateKey: this.onCreateKey,
+        createOpacity: canCreate ? 1 : 0.4,
+      };
+    }
+    if (s.step === 'join') {
+      return {
+        isCreate: false, isApp: false, isJoin: true, addOpen: false,
+        joinTeamName: s.teamName,
+        joinMemberCount: s.participants.length,
+        routeNameDraft: s.routeNameDraft, onRouteName: this.onRouteName, onRouteKey: this.onRouteKey,
+        doJoinRoute: this.doJoinRoute, routeOpacity: s.routeNameDraft.trim() ? 1 : 0.4,
+      };
+    }
+
+    const geo = this.geometry();
+    const ps = s.participants;
+    const circles = [], labels = [], chips = [], avatars = [];
+
+    ps.forEach((p, pi) => {
+      const col = this.colorFor(pi);
+      const c = geo.centers[pi], R = geo.R;
+      const active = p.id === s.meId;
+      circles.push({ key: p.id, style: `position:absolute; width:${R * 2}px; height:${R * 2}px; left:${c.x}px; top:${c.y}px; transform:translate(-50%,-50%); border-radius:50%; background:${active ? col.fillActive : col.fill}; border:1.5px solid ${col.stroke}; mix-blend-mode:multiply; transition:background .3s ease;` });
+
+      let ox, oy;
+      if (geo.n === 1) { ox = 0; oy = -1; } else { ox = Math.cos(c.ang); oy = Math.sin(c.ang); }
+      const lx = c.x + ox * (R + 22), ly = c.y + oy * (R + 22);
+      labels.push({ key: p.id, name: p.name, sub: active ? 'you · editing' : `${p.items.length} item${p.items.length === 1 ? '' : 's'}`, style: `position:absolute; left:${lx}px; top:${ly}px; transform:translate(-50%,-50%); text-align:center; color:${col.solid}; pointer-events:none;` });
+
+      avatars.push({ key: p.id, initial: p.name.slice(0, 1).toUpperCase(), name: p.name, onClick: () => this.setActive(p.id), style: `width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff; background:${col.solid}; cursor:pointer; margin-left:-6px; box-shadow:${active ? `0 0 0 2px #FAFAF9, 0 0 0 4px ${col.solid}` : '0 0 0 2px #FAFAF9'}; position:relative; z-index:${active ? 2 : 1};` });
+
+      p.items.forEach((it, idx) => {
+        const rp = (it.rx != null) ? { rx: it.rx, ry: it.ry } : this.defaultRel(c, idx, p.items.length, geo.n);
+        const x = c.x + rp.rx * R, y = c.y + rp.ry * R;
+        chips.push({
+          key: p.id + '/' + it.id, text: it.text, active,
+          onDown: active ? ((e) => this.startDrag(p.id, it.id, e)) : null,
+          onRemove: (e) => { e.stopPropagation(); this.removeItem(p.id, it.id); },
+          style: `position:absolute; left:${x}px; top:${y}px; transform:translate(-50%,-50%); display:flex; align-items:center; gap:5px; padding:5px 9px; border-radius:8px; background:#fff; border:1px solid ${active ? col.stroke : '#E2E1DC'}; color:#26261F; font-size:13px; white-space:nowrap; box-shadow:0 1px 3px rgba(20,20,10,.09); cursor:${active ? 'grab' : 'default'}; opacity:${active ? 1 : 0.8}; z-index:5; user-select:none; touch-action:none;`,
+        });
+      });
+    });
+
+    const eligible = ps.filter(p => p.items.length > 0).length >= 2;
+
+    return {
+      isCreate: false, isApp: true, isJoin: false,
+      teamName: s.teamName,
+      link: this.shareLink(),
+      copyLabel: s.copied ? 'Copied' : 'Copy',
+      invitePopover: s.invitePopover, toggleInvite: this.toggleInvite, copyLink: this.copyLink,
+      openCollabWindow: this.openCollabWindow, openAdd: this.openAdd,
+      collabWindows: s.collabWindows.map((w) => ({
+        key: w.id,
+        src: this.shareLink(),
+        onClose: () => this.closeCollab(w.id),
+        onHeaderDown: (e) => this.startWinDrag(w.id, e),
+        style: `position:fixed; left:${w.x}px; top:${w.y}px; width:440px; height:560px; background:#fff; border:1px solid #DEDDD6; border-radius:13px; box-shadow:0 24px 70px rgba(20,20,10,.28); z-index:${w.z}; overflow:hidden; display:flex; flex-direction:column; animation:vfade .18s ease;`,
+      })),
+      addOpen: s.addOpen, addNameDraft: s.addNameDraft, onAddName: this.onAddName, onAddKey: this.onAddKey, confirmAdd: this.confirmAdd, closeAdd: this.closeAdd,
+      addOpacity: s.addNameDraft.trim() ? 1 : 0.4,
+      banner: ps.length === 1,
+      setDiagramRef: this.setDiagramRef,
+      diagramStyle: `position:relative; width:${geo.S}px; height:${geo.S}px; flex:0 0 auto;`,
+      circles, labels, chips, avatars,
+      stop: this.stop,
+      activeName: (ps.find(p => p.id === s.meId) || {}).name || '',
+      draft: s.draft, onDraft: this.onDraft, onDraftKey: this.onDraftKey, addItem: this.addItem,
+      centerStyle: `position:absolute; left:${geo.C}px; top:${geo.C}px; transform:translate(-50%,-50%); z-index:10; display:flex; justify-content:center;`,
+      centerHint: !eligible,
+      centerLoading: eligible && !(s.result && s.result.suggestions && s.result.suggestions.length),
+      centerReady: eligible && !!(s.result && s.result.suggestions && s.result.suggestions.length),
+      updating: s.loading,
+      hintText: ps.length <= 1 ? 'common ground appears here' : 'fill two or more circles',
+      suggestions: ((s.result && s.result.suggestions) || []).map((x, i) => ({ key: i, label: x.label, why: x.why || '' })),
+      cardStyle: `width:236px; padding:15px 17px; background:#fff; border:1px solid #ECEBE5; border-radius:14px; box-shadow:0 10px 30px rgba(20,20,10,.13); text-align:left; cursor:pointer; animation:vfade .2s ease;`,
+      expanded: s.expanded, toggleExpand: this.toggleExpand,
+      expandHint: s.expanded ? 'tap to hide why' : 'tap to see why',
+    };
+  }
+}
+</script>
+</body>
+</html>
