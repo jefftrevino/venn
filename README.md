@@ -1,22 +1,53 @@
-# CODING AGENTS: READ THIS FIRST
+# Overlap
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+A collaborative Venn diagram tool. Create a team, share one link, and let everyone fill in their own circle. An AI suggestion card appears at the intersection once two or more people have added items.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+Built with React + Vite, Supabase (Postgres, Realtime, Edge Functions), and Claude Haiku.
 
-## What you should do — IMPORTANT
+## Prerequisites
 
-**Read `collaborative-venn-diagram-generator/project/Venn.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+- Node.js (v18+)
+- A [Supabase](https://supabase.com) project
+- An [Anthropic](https://console.anthropic.com) API key
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+## Setup
 
-## About the design files
+**1. Install dependencies**
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+```bash
+npm install
+```
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+**2. Configure environment**
 
-## Bundle contents
+Copy `.env.example` to `.env` and fill in your Supabase credentials:
 
-- `collaborative-venn-diagram-generator/README.md` — this file
-- `collaborative-venn-diagram-generator/project/` — the `Collaborative Venn diagram generator` project files (HTML prototypes, assets, components)
+```bash
+cp .env.example .env
+```
+
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-publishable-key
+```
+
+**3. Run the database migration**
+
+In your Supabase project, open the SQL Editor, paste the contents of `supabase/migrations/001_init.sql`, and run it.
+
+**4. Deploy the edge function**
+
+```bash
+supabase login
+supabase link
+supabase secrets set ANTHROPIC_API_KEY=your-anthropic-key
+supabase functions deploy suggest
+```
+
+## Development
+
+```bash
+npm run dev
+```
+
+App runs at `http://localhost:5173`.
