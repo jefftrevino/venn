@@ -57,9 +57,10 @@ App runs at `http://localhost:5173`.
 **One-time setup:**
 
 1. Push this repo to GitHub (`jefftrevino/venn`)
-2. Add two repository secrets at **Settings → Secrets and variables → Actions**:
+2. Add three repository secrets at **Settings → Secrets and variables → Actions**:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` — found in your Supabase project under **Settings → API → service_role**
 3. Enable GitHub Pages at **Settings → Pages → Source: GitHub Actions**
 4. Visit `https://jefftrevino.github.io/venn/`
 
@@ -90,3 +91,7 @@ supabase db reset --linked   # wipe and reapply 001_init.sql to the live DB
 ```bash
 supabase functions deploy suggest
 ```
+
+## Data retention
+
+Teams older than 7 days are deleted automatically every night at 3 AM UTC by `.github/workflows/cleanup.yml`. Deleting a team cascades to its participants, items, and results. To change the TTL, edit the `'7 days ago'` string in that workflow and push.
