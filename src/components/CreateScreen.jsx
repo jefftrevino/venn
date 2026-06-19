@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 export default function CreateScreen({ notFound, createTeam }) {
   const [teamName, setTeamName] = useState('');
   const [yourName, setYourName] = useState('');
+  const [occasion, setOccasion] = useState('');
 
   const canCreate = !!(teamName.trim() && yourName.trim());
 
   const handleCreate = () => {
     if (!canCreate) return;
-    createTeam(teamName.trim(), yourName.trim());
+    createTeam(teamName.trim(), yourName.trim(), occasion);
   };
 
   const handleKey = (e) => {
@@ -116,7 +117,33 @@ export default function CreateScreen({ notFound, createTeam }) {
             borderRadius: 9,
             background: '#fff',
             outline: 'none',
+            marginBottom: 16,
+          }}
+        />
+
+        <label style={{
+          display: 'block',
+          fontSize: 12,
+          color: '#8A8A82',
+          marginBottom: 7,
+        }}>
+          What's the occasion? <span style={{ color: '#C0BFB8' }}>(optional)</span>
+        </label>
+        <input
+          value={occasion}
+          onChange={e => setOccasion(e.target.value)}
+          onKeyDown={handleKey}
+          placeholder="e.g. birthday dinner, road trip playlist, game night…"
+          style={{
+            width: '100%',
+            padding: '11px 13px',
+            fontSize: 15,
+            border: '1px solid #E4E3DD',
+            borderRadius: 9,
+            background: '#fff',
+            outline: 'none',
             marginBottom: 24,
+            color: '#1B1B19',
           }}
         />
 

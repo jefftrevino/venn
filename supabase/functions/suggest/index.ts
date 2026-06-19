@@ -11,17 +11,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { participants } = await req.json();
+    const { participants, occasion } = await req.json();
     const active = (participants || []).filter((p: any) => p.items?.length > 0);
 
     if (active.length < 2) {
-      return Response.json({ suggestions: [] }, { headers: corsHeaders });
+      return Response.json({ suggestions: [], divergence: null }, { headers: corsHeaders });
     }
 
     const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });
     const desc = active.map((p: any) => `- ${p.name}: ${p.items.join(', ')}`).join('\n');
 
-    // Stage 1: infer domain
+    // Stage 1: infer domain from items alone
     const s1 = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 512,
@@ -33,13 +33,26 @@ Deno.serve(async (req) => {
 
     const d = JSON.parse((s1.content[0] as any).text.match(/\{[\s\S]*\}/)[0]);
 
+    // Build occasion-specific additions for stage 2
+    const occasionClause = occasion
+      ? `\nThe group's occasion: "${occasion}". Every suggestion must feel right for this occasion.\n`
+      : '';
+
+    const divergenceInstruction = occasion
+      ? `\n\nAlso: do the participants' items actually fit this occasion? If yes, set "divergence" to null. If the items and occasion feel mismatched, write one short, friendly sentence that gently surfaces the tension — don't judge, just name it. Start with something like "Your picks lean more toward X than Y..." so people can laugh and course-correct.`
+      : '';
+
+    const divergenceSchema = occasion
+      ? `,"divergence":null`
+      : '';
+
     // Stage 2: generate suggestions
     const s2 = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       messages: [{
         role: 'user',
-        content: `A group is collaboratively choosing ${d.domain}. Every item below is one of these: ${d.kind}.\n\n${desc}\n\nWhat each item signals:\n${(d.reads || []).map((r: string) => '- ' + r).join('\n')}\n\nStep 1 — Find the genuine overlap. Identify 3–4 specific qualities that are present across ALL of the listed items simultaneously. Look across dimensions like format, occasion, cultural register, texture, emotional tone, price point, setting. Only count a quality if you can defend its presence in every single item.\n\nStep 2 — Propose 4 NEW ${d.kind} (none already listed above) that embody ALL of those shared qualities at once. Each suggestion must be something every person in the group would recognize as capturing what they were going for. Discard any candidate that mainly resembles just one or two of the inputs — it must bridge all of them. Prefer specific and surprising over safe and obvious.\n\nHard requirements for each suggestion's "label": it must be an actual ${d.kind}, written in the SAME surface format as the listed items (${d.format}) — same length, same capitalization, just the thing itself with no description.\n\nReturn ONLY a JSON object, no prose, no markdown:\n{"shared_qualities":["<quality present in ALL items>","<quality present in ALL items>","<quality present in ALL items>"],"suggestions":[{"label":"<the ${d.kind}, formatted exactly like the inputs>","why":"<one warm, conversational sentence explaining why this would work for this specific group — write it like a friend making the case, not an analyst describing overlap>"}]}`
+        content: `A group is collaboratively choosing ${d.domain}. Every item below is one of these: ${d.kind}.\n\n${desc}\n${occasionClause}\nWhat each item signals:\n${(d.reads || []).map((r: string) => '- ' + r).join('\n')}\n\nStep 1 — Find the genuine overlap. Identify 3–4 specific qualities that are present across ALL of the listed items simultaneously. Look across dimensions like format, occasion, cultural register, texture, emotional tone, price point, setting. Only count a quality if you can defend its presence in every single item.\n\nStep 2 — Propose 4 NEW ${d.kind} (none already listed above) that embody ALL of those shared qualities at once. Each suggestion must be something every person in the group would recognize as capturing what they were going for. Discard any candidate that mainly resembles just one or two of the inputs — it must bridge all of them. Prefer specific and surprising over safe and obvious.${divergenceInstruction}\n\nHard requirements for each suggestion's "label": it must be an actual ${d.kind}, written in the SAME surface format as the listed items (${d.format}) — same length, same capitalization, just the thing itself with no description.\n\nReturn ONLY a JSON object, no prose, no markdown:\n{"shared_qualities":["<quality present in ALL items>","<quality present in ALL items>","<quality present in ALL items>"],"suggestions":[{"label":"<the ${d.kind}, formatted exactly like the inputs>","why":"<one short, simple sentence — no jargon, no lists, just why this feels right for this specific group>"}]${divergenceSchema}}`
       }],
     });
 
@@ -49,7 +62,11 @@ Deno.serve(async (req) => {
       .slice(0, 5)
       .map((x: any) => ({ label: String(x.label), why: String(x.why || '') }));
 
-    return Response.json({ suggestions }, { headers: corsHeaders });
+    const divergence = occasion && r.divergence && typeof r.divergence === 'string' && r.divergence !== 'null'
+      ? r.divergence
+      : null;
+
+    return Response.json({ suggestions, divergence }, { headers: corsHeaders });
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: 'suggest failed' }), {

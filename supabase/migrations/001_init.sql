@@ -4,6 +4,7 @@ create table teams (
   id uuid primary key default gen_random_uuid(),
   code text unique not null,
   name text not null,
+  occasion text,
   created_at timestamptz default now()
 );
 
@@ -28,6 +29,7 @@ create table team_results (
   team_id uuid primary key references teams(id) on delete cascade,
   suggestions jsonb not null default '[]',
   loading boolean not null default false,
+  divergence text,
   updated_at timestamptz default now()
 );
 

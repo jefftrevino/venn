@@ -17,6 +17,7 @@ export function useTeam() {
   const [meId, setMeId] = useState(null);
   const [result, setResult] = useState(null);
   const [resultLoading, setResultLoading] = useState(false);
+  const [divergence, setDivergence] = useState(null);
 
   const channelRef = useRef(null);
   const scheduleRef = useRef(null);
@@ -36,10 +37,11 @@ export function useTeam() {
     if (eligible.length < 2) {
       if (tid) {
         supabase.from('team_results')
-          .upsert({ team_id: tid, suggestions: [], loading: false }, { onConflict: 'team_id' })
+          .upsert({ team_id: tid, suggestions: [], divergence: null, loading: false }, { onConflict: 'team_id' })
           .then(() => {});
       }
       setResult(null);
+      setDivergence(null);
       setResultLoading(false);
       return;
     }
@@ -56,12 +58,14 @@ export function useTeam() {
       const seq = ++seqRef.current;
 
       try {
+        const occasion = (teamData && teamData.occasion) || (teamRef.current && teamRef.current.occasion) || null;
         const { data, error } = await supabase.functions.invoke('suggest', {
           body: {
             participants: eligible.map(p => ({
               name: p.name,
               items: p.items.map(i => i.text),
             })),
+            occasion,
           },
         });
 
@@ -78,14 +82,16 @@ export function useTeam() {
         }
 
         const suggestions = (data && data.suggestions) || [];
+        const newDivergence = (data && data.divergence) || null;
         if (tid) {
           await supabase.from('team_results').upsert(
-            { team_id: tid, suggestions, loading: false, updated_at: new Date().toISOString() },
+            { team_id: tid, suggestions, divergence: newDivergence, loading: false, updated_at: new Date().toISOString() },
             { onConflict: 'team_id' }
           );
         }
         if (seq !== seqRef.current) return;
         setResult(suggestions.length ? suggestions : null);
+        setDivergence(newDivergence);
         setResultLoading(false);
       } catch (err) {
         if (seq !== seqRef.current) return;
@@ -192,6 +198,7 @@ export function useTeam() {
         const suggestions = payload.new.suggestions || [];
         setResult(suggestions.length ? suggestions : null);
         setResultLoading(!!payload.new.loading);
+        setDivergence(payload.new.divergence || null);
       })
       .subscribe();
 
@@ -202,7 +209,7 @@ export function useTeam() {
   const loadTeam = useCallback(async (code, meParam) => {
     const { data, error } = await supabase
       .from('teams')
-      .select('id,code,name, participants(id,name,created_at, items(id,text,rx,ry,created_at)), team_results(suggestions,loading)')
+      .select('id,code,name,occasion, participants(id,name,created_at, items(id,text,rx,ry,created_at)), team_results(suggestions,loading,divergence)')
       .eq('code', code)
       .single();
 
@@ -220,7 +227,7 @@ export function useTeam() {
         .map(it => ({ id: it.id, text: it.text, rx: it.rx, ry: it.ry })),
     }));
 
-    const teamData = { id: data.id, code: data.code, name: data.name };
+    const teamData = { id: data.id, code: data.code, name: data.name, occasion: data.occasion || null };
     setTeam(teamData);
     teamRef.current = teamData;
     setParticipants(ps);
@@ -233,6 +240,7 @@ export function useTeam() {
       const suggestions = resultRow.suggestions || [];
       setResult(suggestions.length ? suggestions : null);
       setResultLoading(!!resultRow.loading);
+      setDivergence(resultRow.divergence || null);
     }
 
     subscribe(data.id);
@@ -268,7 +276,7 @@ export function useTeam() {
   }, []);
 
   // ─── createTeam ──────────────────────────────────────────────────────────
-  const createTeam = useCallback(async (teamName, yourName) => {
+  const createTeam = useCallback(async (teamName, yourName, occasion) => {
     const tn = teamName.trim();
     const yn = yourName.trim();
     if (!tn || !yn) return;
@@ -277,7 +285,7 @@ export function useTeam() {
       const code = randCode();
       const { data: teamData, error: teamErr } = await supabase
         .from('teams')
-        .insert({ code, name: tn })
+        .insert({ code, name: tn, occasion: occasion ? occasion.trim() || null : null })
         .select()
         .single();
 
@@ -291,7 +299,7 @@ export function useTeam() {
 
       if (partErr) throw partErr;
 
-      const newTeam = { id: teamData.id, code: teamData.code, name: teamData.name };
+      const newTeam = { id: teamData.id, code: teamData.code, name: teamData.name, occasion: teamData.occasion || null };
       const newPart = { id: partData.id, name: partData.name, items: [] };
 
       teamRef.current = newTeam;
@@ -460,6 +468,7 @@ export function useTeam() {
     meId,
     result,
     resultLoading,
+    divergence,
     createTeam,
     joinTeam,
     addItem,

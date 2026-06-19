@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function SuggestionPanel({ suggestions, expanded, onToggle, updating }) {
+export default function SuggestionPanel({ suggestions, expanded, onToggle, updating, divergence }) {
   return (
     <div
       onClick={onToggle}
@@ -66,6 +66,21 @@ export default function SuggestionPanel({ suggestions, expanded, onToggle, updat
           </div>
         ))}
       </div>
+
+      {divergence && (
+        <div style={{
+          fontSize: 11,
+          color: '#8A7A5A',
+          background: '#FAF6EC',
+          border: '1px solid #EAE0C4',
+          borderRadius: 7,
+          padding: '7px 10px',
+          marginTop: 10,
+          lineHeight: 1.45,
+        }}>
+          {divergence}
+        </div>
+      )}
 
       <div style={{
         fontFamily: "'Geist Mono', monospace",

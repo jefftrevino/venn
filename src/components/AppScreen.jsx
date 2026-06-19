@@ -10,6 +10,7 @@ export default function AppScreen({
   meId,
   result,
   resultLoading,
+  divergence,
   addItem,
   removeItem,
   startDrag,
@@ -230,6 +231,7 @@ export default function AppScreen({
           meId={meId}
           result={result}
           resultLoading={resultLoading}
+          divergence={divergence}
           addItem={addItem}
           removeItem={removeItem}
           startDrag={startDrag}

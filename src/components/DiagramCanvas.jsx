@@ -8,6 +8,7 @@ export default function DiagramCanvas({
   meId,
   result,
   resultLoading,
+  divergence,
   addItem,
   removeItem,
   startDrag,
@@ -275,6 +276,7 @@ export default function DiagramCanvas({
             expanded={expanded}
             onToggle={onToggleExpand}
             updating={resultLoading}
+            divergence={divergence}
           />
         )}
       </div>
