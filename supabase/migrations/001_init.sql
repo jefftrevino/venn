@@ -27,6 +27,7 @@ create table items (
 create table team_results (
   team_id uuid primary key references teams(id) on delete cascade,
   suggestions jsonb not null default '[]',
+  loading boolean not null default false,
   updated_at timestamptz default now()
 );
 

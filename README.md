@@ -51,3 +51,19 @@ npm run dev
 ```
 
 App runs at `http://localhost:5173`.
+
+## Deploy (GitHub Pages)
+
+**One-time setup:**
+
+1. Push this repo to GitHub (`jefftrevino/venn`)
+2. Add two repository secrets at **Settings → Secrets and variables → Actions**:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+3. Enable GitHub Pages at **Settings → Pages → Source: GitHub Actions**
+
+After that, every push to `main` deploys automatically. The live app will be at:
+
+```
+https://jefftrevino.github.io/venn/
+```

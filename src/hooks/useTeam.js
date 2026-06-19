@@ -36,7 +36,7 @@ export function useTeam() {
     if (eligible.length < 2) {
       if (tid) {
         supabase.from('team_results')
-          .upsert({ team_id: tid, suggestions: [] }, { onConflict: 'team_id' })
+          .upsert({ team_id: tid, suggestions: [], loading: false }, { onConflict: 'team_id' })
           .then(() => {});
       }
       setResult(null);
@@ -44,7 +44,13 @@ export function useTeam() {
       return;
     }
 
+    // Signal all clients that recalculation is in progress
     setResultLoading(true);
+    if (tid) {
+      supabase.from('team_results')
+        .upsert({ team_id: tid, loading: true }, { onConflict: 'team_id' })
+        .then(() => {});
+    }
 
     scheduleRef.current = setTimeout(async () => {
       const seq = ++seqRef.current;
@@ -62,6 +68,11 @@ export function useTeam() {
         if (seq !== seqRef.current) return;
 
         if (error) {
+          if (tid) {
+            supabase.from('team_results')
+              .upsert({ team_id: tid, loading: false }, { onConflict: 'team_id' })
+              .then(() => {});
+          }
           setResultLoading(false);
           return;
         }
@@ -69,7 +80,7 @@ export function useTeam() {
         const suggestions = (data && data.suggestions) || [];
         if (tid) {
           await supabase.from('team_results').upsert(
-            { team_id: tid, suggestions, updated_at: new Date().toISOString() },
+            { team_id: tid, suggestions, loading: false, updated_at: new Date().toISOString() },
             { onConflict: 'team_id' }
           );
         }
@@ -78,6 +89,11 @@ export function useTeam() {
         setResultLoading(false);
       } catch (err) {
         if (seq !== seqRef.current) return;
+        if (tid) {
+          supabase.from('team_results')
+            .upsert({ team_id: tid, loading: false }, { onConflict: 'team_id' })
+            .then(() => {});
+        }
         setResultLoading(false);
       }
     }, 1100);
@@ -175,7 +191,7 @@ export function useTeam() {
         }
         const suggestions = payload.new.suggestions || [];
         setResult(suggestions.length ? suggestions : null);
-        setResultLoading(false);
+        setResultLoading(!!payload.new.loading);
       })
       .subscribe();
 
@@ -186,7 +202,7 @@ export function useTeam() {
   const loadTeam = useCallback(async (code, meParam) => {
     const { data, error } = await supabase
       .from('teams')
-      .select('id,code,name, participants(id,name,created_at, items(id,text,rx,ry,created_at)), team_results(suggestions)')
+      .select('id,code,name, participants(id,name,created_at, items(id,text,rx,ry,created_at)), team_results(suggestions,loading)')
       .eq('code', code)
       .single();
 
@@ -209,10 +225,14 @@ export function useTeam() {
     teamRef.current = teamData;
     setParticipants(ps);
 
-    const resultRows = data.team_results || [];
-    if (resultRows.length > 0) {
-      const suggestions = resultRows[0].suggestions || [];
+    // PostgREST returns team_results as an object (one-to-one via PK FK), not an array
+    const resultRow = Array.isArray(data.team_results)
+      ? data.team_results[0]
+      : data.team_results;
+    if (resultRow) {
+      const suggestions = resultRow.suggestions || [];
       setResult(suggestions.length ? suggestions : null);
+      setResultLoading(!!resultRow.loading);
     }
 
     subscribe(data.id);

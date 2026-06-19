@@ -52,9 +52,9 @@ Deno.serve(async (req) => {
     return Response.json({ suggestions }, { headers: corsHeaders });
   } catch (err) {
     console.error(err);
-    return Response.json(
-      { suggestions: [{ label: 'add a couple more', why: 'a few more items will sharpen the overlap — it retries automatically' }] },
-      { headers: corsHeaders }
-    );
+    return new Response(JSON.stringify({ error: 'suggest failed' }), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 });
