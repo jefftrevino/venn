@@ -61,9 +61,32 @@ App runs at `http://localhost:5173`.
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
 3. Enable GitHub Pages at **Settings → Pages → Source: GitHub Actions**
+4. Visit `https://jefftrevino.github.io/venn/`
 
 After that, every push to `main` deploys automatically. The live app will be at:
 
 ```
 https://jefftrevino.github.io/venn/
+```
+
+**Deploying a revision:**
+
+```bash
+git add .
+git commit -m "your message"
+git push
+```
+
+GitHub Actions builds and deploys automatically. Watch progress at `github.com/jefftrevino/venn/actions`.
+
+**Deploying a schema change:**
+
+```bash
+supabase db reset --linked   # wipe and reapply 001_init.sql to the live DB
+```
+
+**Deploying an edge function change:**
+
+```bash
+supabase functions deploy suggest
 ```
